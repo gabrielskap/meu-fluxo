@@ -1,35 +1,62 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { InventoryItem, BusinessFilter } from '@/lib/types';
 import { getInventory, addInventoryItem as addInv, updateInventoryItem as updateInv, deleteInventoryItem as deleteInv } from '@/lib/store';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export function useInventory() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(getInventory);
   const [businessFilter, setBusinessFilter] = useState<BusinessFilter>('todos');
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const refresh = useCallback(() => setInventory(getInventory()), []);
+  const { data: inventory = [], isLoading } = useQuery({
+    queryKey: ['inventory', user?.id],
+    queryFn: getInventory,
+    enabled: !!user,
+  });
 
-  const addInventoryItem = useCallback((t: InventoryItem) => {
-    addInv(t);
-    refresh();
-  }, [refresh]);
+  const addMutation = useMutation({
+    mutationFn: addInv,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao adicionar item: ' + error.message);
+    }
+  });
 
-  const updateInventoryItem = useCallback((t: InventoryItem) => {
-    updateInv(t);
-    refresh();
-  }, [refresh]);
+  const updateMutation = useMutation({
+    mutationFn: updateInv,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao atualizar item: ' + error.message);
+    }
+  });
 
-  const deleteInventoryItem = useCallback((id: string) => {
-    deleteInv(id);
-    refresh();
-  }, [refresh]);
+  const deleteMutation = useMutation({
+    mutationFn: deleteInv,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao remover item: ' + error.message);
+    }
+  });
+
+  const addInventoryItem = (t: InventoryItem) => addMutation.mutate(t);
+  const updateInventoryItem = (t: InventoryItem) => updateMutation.mutate(t);
+  const deleteInventoryItem = (id: string) => deleteMutation.mutate(id);
 
   const filtered = useMemo(() => {
     if (businessFilter === 'todos') return inventory;
-    return inventory.filter(t => t.business === businessFilter);
+    return inventory.filter((t: InventoryItem) => t.business === businessFilter);
   }, [inventory, businessFilter]);
 
   const totalValue = useMemo(() => {
-    return filtered.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    return filtered.reduce((acc: number, item: InventoryItem) => acc + (item.price * item.quantity), 0);
   }, [filtered]);
 
   return {
@@ -41,5 +68,6 @@ export function useInventory() {
     updateInventoryItem,
     deleteInventoryItem,
     totalValue,
+    isLoading,
   };
 }

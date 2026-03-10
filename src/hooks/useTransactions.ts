@@ -1,50 +1,77 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Transaction, BusinessFilter } from '@/lib/types';
-import { getTransactions, saveTransactions, addTransaction as addTx, updateTransaction as updateTx, deleteTransaction as deleteTx } from '@/lib/store';
+import { getTransactions, addTransaction as addTx, updateTransaction as updateTx, deleteTransaction as deleteTx } from '@/lib/store';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>(getTransactions);
   const [businessFilter, setBusinessFilter] = useState<BusinessFilter>('todos');
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const refresh = useCallback(() => setTransactions(getTransactions()), []);
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ['transactions', user?.id],
+    queryFn: getTransactions,
+    enabled: !!user,
+  });
 
-  const addTransaction = useCallback((t: Transaction) => {
-    addTx(t);
-    refresh();
-  }, [refresh]);
+  const addMutation = useMutation({
+    mutationFn: addTx,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao adicionar transação: ' + error.message);
+    }
+  });
 
-  const updateTransaction = useCallback((t: Transaction) => {
-    updateTx(t);
-    refresh();
-  }, [refresh]);
+  const updateMutation = useMutation({
+    mutationFn: updateTx,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao atualizar transação: ' + error.message);
+    }
+  });
 
-  const deleteTransaction = useCallback((id: string) => {
-    deleteTx(id);
-    refresh();
-  }, [refresh]);
+  const deleteMutation = useMutation({
+    mutationFn: deleteTx,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao remover transação: ' + error.message);
+    }
+  });
+
+  const addTransaction = (t: Transaction) => addMutation.mutate(t);
+  const updateTransaction = (t: Transaction) => updateMutation.mutate(t);
+  const deleteTransaction = (id: string) => deleteMutation.mutate(id);
 
   const filtered = useMemo(() => {
     if (businessFilter === 'todos') return transactions;
-    return transactions.filter(t => t.business === businessFilter);
+    return transactions.filter((t: Transaction) => t.business === businessFilter);
   }, [transactions, businessFilter]);
 
   const currentMonth = useMemo(() => {
     const now = new Date();
     const month = now.getMonth();
     const year = now.getFullYear();
-    return filtered.filter(t => {
+    return filtered.filter((t: Transaction) => {
       const d = new Date(t.date);
       return d.getMonth() === month && d.getFullYear() === year;
     });
   }, [filtered]);
 
-  const totalIncome = useMemo(() => currentMonth.filter(t => t.type === 'receita').reduce((s, t) => s + t.amount, 0), [currentMonth]);
-  const totalExpense = useMemo(() => currentMonth.filter(t => t.type === 'gasto').reduce((s, t) => s + t.amount, 0), [currentMonth]);
+  const totalIncome = useMemo(() => currentMonth.filter((t: Transaction) => t.type === 'receita').reduce((s: number, t: Transaction) => s + t.amount, 0), [currentMonth]);
+  const totalExpense = useMemo(() => currentMonth.filter((t: Transaction) => t.type === 'gasto').reduce((s: number, t: Transaction) => s + t.amount, 0), [currentMonth]);
   const profit = totalIncome - totalExpense;
 
   const expensesByCategory = useMemo(() => {
     const map: Record<string, number> = {};
-    currentMonth.filter(t => t.type === 'gasto').forEach(t => {
+    currentMonth.filter((t: Transaction) => t.type === 'gasto').forEach((t: Transaction) => {
       map[t.category] = (map[t.category] || 0) + t.amount;
     });
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -58,14 +85,14 @@ export function useTransactions() {
       const month = d.getMonth();
       const year = d.getFullYear();
       const label = d.toLocaleString('pt-BR', { month: 'short' });
-      const monthTx = filtered.filter(t => {
+      const monthTx = filtered.filter((t: Transaction) => {
         const td = new Date(t.date);
         return td.getMonth() === month && td.getFullYear() === year;
       });
       months.push({
         name: label,
-        receitas: monthTx.filter(t => t.type === 'receita').reduce((s, t) => s + t.amount, 0),
-        gastos: monthTx.filter(t => t.type === 'gasto').reduce((s, t) => s + t.amount, 0),
+        receitas: monthTx.filter((t: Transaction) => t.type === 'receita').reduce((s: number, t: Transaction) => s + t.amount, 0),
+        gastos: monthTx.filter((t: Transaction) => t.type === 'gasto').reduce((s: number, t: Transaction) => s + t.amount, 0),
       });
     }
     return months;
@@ -88,5 +115,6 @@ export function useTransactions() {
     monthlyData,
     highExpenseAlert,
     currentMonth,
+    isLoading
   };
 }
