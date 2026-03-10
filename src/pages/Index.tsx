@@ -5,8 +5,10 @@ import { TransactionForm } from '@/components/TransactionForm';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { Reports } from '@/components/Reports';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useAuth } from '@/hooks/useAuth';
 import { Transaction } from '@/lib/types';
 import { toast } from 'sonner';
+import { LogOut } from 'lucide-react';
 
 type Tab = 'dashboard' | 'add' | 'history' | 'reports';
 
@@ -14,6 +16,7 @@ const Index = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const tx = useTransactions();
+  const { signOut } = useAuth();
 
   const handleEdit = (t: Transaction) => {
     setEditingTx(t);
@@ -38,7 +41,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-lg mx-auto px-4 pt-6">
+      <div className="max-w-lg mx-auto px-4 pt-4">
+        <div className="flex justify-end mb-2">
+          <button onClick={signOut} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </button>
+        </div>
         {tab === 'dashboard' && (
           <Dashboard
             totalIncome={tx.totalIncome}
