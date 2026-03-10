@@ -1,6 +1,6 @@
-import { LayoutDashboard, PlusCircle, List, FileBarChart } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, List, FileBarChart, Package } from 'lucide-react';
 
-type Tab = 'dashboard' | 'add' | 'history' | 'reports';
+export type Tab = 'dashboard' | 'add' | 'history' | 'inventory' | 'reports';
 
 interface BottomNavProps {
   active: Tab;
@@ -11,6 +11,7 @@ const items: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
   { id: 'add', label: 'Registrar', icon: PlusCircle },
   { id: 'history', label: 'Histórico', icon: List },
+  { id: 'inventory', label: 'Estoque', icon: Package },
   { id: 'reports', label: 'Relatório', icon: FileBarChart },
 ];
 
@@ -28,8 +29,8 @@ export function BottomNav({ active, onNavigate }: BottomNavProps) {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Icon className="h-6 w-6" />
-            <span className="text-xs font-medium">{label}</span>
+            <Icon className="h-5 w-5" />
+            <span className="text-[10px] font-medium">{label}</span>
           </button>
         ))}
       </div>

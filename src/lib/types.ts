@@ -30,3 +30,11 @@ export interface Transaction {
 }
 
 export type BusinessFilter = BusinessType | 'todos';
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  business: BusinessType;
+}

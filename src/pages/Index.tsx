@@ -4,13 +4,15 @@ import { Dashboard } from '@/components/Dashboard';
 import { TransactionForm } from '@/components/TransactionForm';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { Reports } from '@/components/Reports';
+import { Inventory } from '@/components/Inventory';
+import { Tab } from '@/components/BottomNav';
+
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
 import { Transaction } from '@/lib/types';
 import { toast } from 'sonner';
 import { LogOut } from 'lucide-react';
 
-type Tab = 'dashboard' | 'add' | 'history' | 'reports';
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -79,6 +81,12 @@ const Index = () => {
         {tab === 'reports' && (
           <Reports
             transactions={tx.transactions}
+            businessFilter={tx.businessFilter}
+            setBusinessFilter={tx.setBusinessFilter}
+          />
+        )}
+        {tab === 'inventory' && (
+          <Inventory
             businessFilter={tx.businessFilter}
             setBusinessFilter={tx.setBusinessFilter}
           />
