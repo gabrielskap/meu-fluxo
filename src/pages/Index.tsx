@@ -16,6 +16,7 @@ const Index = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const tx = useTransactions();
+  const { signOut } = useAuth();
 
   const handleEdit = (t: Transaction) => {
     setEditingTx(t);
