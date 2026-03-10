@@ -5,8 +5,10 @@ import { TransactionForm } from '@/components/TransactionForm';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { Reports } from '@/components/Reports';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useAuth } from '@/hooks/useAuth';
 import { Transaction } from '@/lib/types';
 import { toast } from 'sonner';
+import { LogOut } from 'lucide-react';
 
 type Tab = 'dashboard' | 'add' | 'history' | 'reports';
 
